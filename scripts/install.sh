@@ -47,7 +47,7 @@ INSTALL_DIR=$(mktemp -d)
 cd "$INSTALL_DIR"
 
 echo -e "${BLUE}Downloading Pairio...${NC}"
-git clone --depth 1 https://github.com/loganallen/Pairio.git
+git clone --depth 1 https://github.com/ixmxvii-hash/Pairio.git
 cd Pairio
 
 echo ""

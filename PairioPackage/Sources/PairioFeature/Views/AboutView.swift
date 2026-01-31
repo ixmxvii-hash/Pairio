@@ -50,7 +50,7 @@ public struct AboutView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
-                Link("GitHub", destination: URL(string: "https://github.com/loganallen")!)
+                Link("GitHub", destination: URL(string: "https://github.com/ixmxvii-hash/Pairio")!)
                     .font(.caption)
             }
 
