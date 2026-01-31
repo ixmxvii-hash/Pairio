@@ -18,7 +18,20 @@ Pairio is a menu bar app that enables audio sharing on Mac. Connect multiple Air
 
 ## Installation
 
-### One-liner Install (Recommended)
+### Homebrew (Recommended)
+
+```bash
+brew install ixmxvii-hash/pairio/pairio
+```
+
+Or tap first:
+
+```bash
+brew tap ixmxvii-hash/pairio
+brew install pairio
+```
+
+### One-liner Script
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ixmxvii-hash/Pairio/main/scripts/install.sh | bash
@@ -27,17 +40,18 @@ curl -fsSL https://raw.githubusercontent.com/ixmxvii-hash/Pairio/main/scripts/in
 ### Manual Install
 
 ```bash
-# Clone the repository
 git clone https://github.com/ixmxvii-hash/Pairio.git
 cd Pairio
-
-# Build and install
 make install
 ```
 
 ### Uninstall
 
 ```bash
+# If installed via Homebrew
+brew uninstall pairio
+
+# If installed manually
 make uninstall
 ```
 
