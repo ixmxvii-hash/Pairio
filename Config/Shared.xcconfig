@@ -1,0 +1,32 @@
+// Shared.xcconfig
+// Common build settings for Pairio
+
+// Deployment Target
+MACOSX_DEPLOYMENT_TARGET = 26.0
+
+// Swift Settings
+SWIFT_VERSION = 6.0
+SWIFT_STRICT_CONCURRENCY = complete
+
+// Code Signing
+CODE_SIGN_STYLE = Automatic
+CODE_SIGN_ENTITLEMENTS = Config/Pairio.entitlements
+
+// Build Settings
+PRODUCT_NAME = $(TARGET_NAME)
+PRODUCT_BUNDLE_IDENTIFIER = com.loganallen.Pairio
+
+// Architecture
+ARCHS = $(ARCHS_STANDARD)
+
+// Swift Optimization
+SWIFT_COMPILATION_MODE = wholemodule
+
+// Enable Modules
+CLANG_ENABLE_MODULES = YES
+
+// Combine hidpi images
+COMBINE_HIDPI_IMAGES = YES
+
+// App Category
+INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.utilities

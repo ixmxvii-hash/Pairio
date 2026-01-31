@@ -1,0 +1,15 @@
+// Debug.xcconfig
+// Debug build configuration
+
+#include "Shared.xcconfig"
+
+// Debug Settings
+DEBUG_INFORMATION_FORMAT = dwarf-with-dsym
+GCC_OPTIMIZATION_LEVEL = 0
+SWIFT_OPTIMIZATION_LEVEL = -Onone
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG
+ENABLE_TESTABILITY = YES
+ONLY_ACTIVE_ARCH = YES
+
+// Code Signing for Development
+CODE_SIGN_IDENTITY = Apple Development
