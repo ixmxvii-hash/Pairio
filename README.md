@@ -1,10 +1,19 @@
-# Pairio
+<p align="center">
+  <img src="assets/logo.png" alt="Pairio Logo" width="200">
+</p>
 
-**AirPods Audio Sharing for Mac** – Share audio with multiple AirPods simultaneously, just like iPhone and Apple TV.
+<h1 align="center">Pairio</h1>
 
-![macOS](https://img.shields.io/badge/macOS-26%2B-blue)
-![Swift](https://img.shields.io/badge/Swift-6.1-orange)
-![License](https://img.shields.io/badge/License-MIT-green)
+<p align="center">
+  <strong>AirPods Audio Sharing for Mac</strong><br>
+  Share audio with multiple AirPods simultaneously, just like iPhone and Apple TV.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/macOS-26%2B-blue" alt="macOS">
+  <img src="https://img.shields.io/badge/Swift-6.1-orange" alt="Swift">
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
+</p>
 
 ## What is Pairio?
 

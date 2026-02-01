@@ -48,6 +48,10 @@ public final class AudioDeviceService {
     // Track previously seen AirPods for auto-share detection
     private var previouslyConnectedAirPodsUIDs: Set<String> = []
 
+    // Debouncing for device change events
+    private var deviceChangeDebounceTask: Task<Void, Never>?
+
+
     /// Notification service for system notifications
     public let notificationService: NotificationService
 
@@ -265,6 +269,21 @@ public final class AudioDeviceService {
     }
 
     private func handleDeviceChange() {
+        // Cancel any pending device change handling
+        deviceChangeDebounceTask?.cancel()
+
+        // Debounce device changes to avoid querying devices in transitional states
+        deviceChangeDebounceTask = Task { @MainActor in
+            // Wait for the audio system to stabilize
+            try? await Task.sleep(for: .milliseconds(300))
+
+            guard !Task.isCancelled else { return }
+
+            await performDeviceChangeCheck()
+        }
+    }
+
+    private func performDeviceChangeCheck() async {
         // Check for auto-share opportunity first (new devices connected)
         if !isSharingActive && autoShareEnabled {
             checkAndAutoStartSharing()
@@ -568,6 +587,11 @@ public final class AudioDeviceService {
             mElement: kAudioObjectPropertyElementMain
         )
 
+        // First check if the property exists
+        guard AudioObjectHasProperty(deviceID, &propertyAddress) else {
+            return false
+        }
+
         var dataSize: UInt32 = 0
         let status = AudioObjectGetPropertyDataSize(
             deviceID,
@@ -586,6 +610,11 @@ public final class AudioDeviceService {
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
+
+        // Check if the property exists before querying
+        guard AudioObjectHasProperty(deviceID, &propertyAddress) else {
+            return nil
+        }
 
         var name: Unmanaged<CFString>?
         var dataSize = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
@@ -614,6 +643,11 @@ public final class AudioDeviceService {
             mScope: kAudioObjectPropertyScopeGlobal,
             mElement: kAudioObjectPropertyElementMain
         )
+
+        // Check if the property exists before querying
+        guard AudioObjectHasProperty(deviceID, &propertyAddress) else {
+            return nil
+        }
 
         var uid: Unmanaged<CFString>?
         var dataSize = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
