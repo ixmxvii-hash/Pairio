@@ -23,7 +23,7 @@ Pairio is a menu bar app that enables audio sharing on Mac. Connect multiple Air
 
 - **macOS 26 (Tahoe)** or later
 - **Xcode 16+** (for building from source)
-- AirPods or Beats headphones
+- Any Bluetooth audio device
 
 ## Installation
 
