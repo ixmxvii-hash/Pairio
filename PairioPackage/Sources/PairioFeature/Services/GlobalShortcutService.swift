@@ -17,6 +17,9 @@ public final class GlobalShortcutService {
     /// Callback triggered when the shortcut is pressed
     public var onShortcutTriggered: (@MainActor () -> Void)?
 
+    /// Callback triggered when volume keys are pressed
+    public var onVolumeKeyPressed: (@MainActor (VolumeKey) -> Void)?
+
     /// The key code for the shortcut (default: P)
     public var keyCode: UInt16 = UInt16(kVK_ANSI_P)
 
@@ -25,6 +28,8 @@ public final class GlobalShortcutService {
 
     private var globalMonitor: Any?
     private var localMonitor: Any?
+    private var volumeGlobalMonitor: Any?
+    private var volumeLocalMonitor: Any?
 
     public init() {}
 
@@ -54,6 +59,21 @@ public final class GlobalShortcutService {
             return event
         }
 
+        // Global monitor for media keys (volume up/down)
+        volumeGlobalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .systemDefined) { [weak self] event in
+            Task { @MainActor in
+                self?.handleSystemEvent(event)
+            }
+        }
+
+        // Local monitor for media keys when app is focused
+        volumeLocalMonitor = NSEvent.addLocalMonitorForEvents(matching: .systemDefined) { [weak self] event in
+            Task { @MainActor in
+                self?.handleSystemEvent(event)
+            }
+            return event
+        }
+
         isMonitoring = true
     }
 
@@ -67,6 +87,16 @@ public final class GlobalShortcutService {
         if let localMonitor = localMonitor {
             NSEvent.removeMonitor(localMonitor)
             self.localMonitor = nil
+        }
+
+        if let volumeGlobalMonitor = volumeGlobalMonitor {
+            NSEvent.removeMonitor(volumeGlobalMonitor)
+            self.volumeGlobalMonitor = nil
+        }
+
+        if let volumeLocalMonitor = volumeLocalMonitor {
+            NSEvent.removeMonitor(volumeLocalMonitor)
+            self.volumeLocalMonitor = nil
         }
 
         isMonitoring = false
@@ -83,6 +113,42 @@ public final class GlobalShortcutService {
         guard relevantFlags == modifierFlags else { return }
 
         onShortcutTriggered?()
+    }
+
+    private func handleSystemEvent(_ event: NSEvent) {
+        guard event.type == .systemDefined, event.subtype.rawValue == 8 else { return }
+
+        let keyCode = (event.data1 & 0xFFFF0000) >> 16
+        let keyFlags = (event.data1 & 0x0000FFFF)
+        let keyState = (keyFlags & 0xFF00) >> 8
+        let isKeyDown = keyState == 0xA
+
+        guard isKeyDown else { return }
+
+        switch Int(keyCode) {
+        case VolumeKey.soundUp.keyCode:
+            onVolumeKeyPressed?(.soundUp)
+        case VolumeKey.soundDown.keyCode:
+            onVolumeKeyPressed?(.soundDown)
+        default:
+            break
+        }
+    }
+}
+
+// MARK: - Volume Keys
+
+public enum VolumeKey {
+    case soundUp
+    case soundDown
+
+    var keyCode: Int {
+        switch self {
+        case .soundUp:
+            return 0
+        case .soundDown:
+            return 1
+        }
     }
 }
 

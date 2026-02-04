@@ -12,6 +12,7 @@ public struct MenuBarView: View {
     @State private var audioService = AudioDeviceService()
     @State private var preferencesService = PreferencesService()
     @State private var shortcutService = GlobalShortcutService()
+    @State private var paywallService = PaywallService.shared
     @State private var availableDevices: [AudioDevice] = []
     @State private var selectedDeviceIDs: Set<AudioDeviceID> = []
     @State private var deviceVolumes: [AudioDeviceID: Float] = [:]
@@ -22,6 +23,10 @@ public struct MenuBarView: View {
     // Favorites UI state
     @State private var showSaveFavoriteSheet = false
     @State private var newFavoriteName = ""
+    @State private var showPaywallSheet = false
+
+    // Auto-refresh state
+    @State private var refreshTask: Task<Void, Never>?
 
     private let appState = AppStateService.shared
 
@@ -49,14 +54,32 @@ public struct MenuBarView: View {
         .task {
             await loadDevices()
             setupShortcutService()
+            setupVolumeChangeListener()
+            startAutoRefresh()
             // Request notification permissions on first launch
             await audioService.notificationService.requestPermissions()
         }
         .onDisappear {
-            shortcutService.stopMonitoring()
+            // Don't stop monitoring shortcuts - they should work globally even when menu is closed
+            stopAutoRefresh()
+        }
+        .onKeyPress(.escape) {
+            // Prevent Escape key from closing the menu
+            return .handled
+        }
+        .onKeyPress(.delete) {
+            // Prevent Delete key from closing the menu
+            return .handled
+        }
+        .onKeyPress(.deleteForward) {
+            // Prevent Forward Delete key from closing the menu
+            return .handled
         }
         .sheet(isPresented: $showSaveFavoriteSheet) {
             saveFavoriteSheet
+        }
+        .sheet(isPresented: $showPaywallSheet) {
+            PaywallView(onDismiss: { showPaywallSheet = false })
         }
     }
 
@@ -449,6 +472,11 @@ public struct MenuBarView: View {
     private func startSharing() {
         errorMessage = nil
 
+        guard paywallService.isAccessAllowed else {
+            showPaywallSheet = true
+            return
+        }
+
         guard selectedDevices.count >= 2 else {
             errorMessage = "Select at least 2 devices to share audio"
             return
@@ -478,7 +506,39 @@ public struct MenuBarView: View {
                 toggleSharing()
             }
         }
+        shortcutService.onVolumeKeyPressed = { [self] key in
+            let step: Float = 0.0625
+            switch key {
+            case .soundUp:
+                audioService.adjustActiveDeviceVolumes(step: step)
+            case .soundDown:
+                audioService.adjustActiveDeviceVolumes(step: -step)
+            }
+        }
         shortcutService.startMonitoring()
+    }
+
+    private func setupVolumeChangeListener() {
+        audioService.onDeviceVolumeChanged = { [self] deviceID, newVolume in
+            // Update the deviceVolumes dictionary to refresh the UI
+            deviceVolumes[deviceID] = newVolume
+        }
+    }
+
+    private func startAutoRefresh() {
+        // Auto-refresh devices every 3 seconds while menu is open
+        refreshTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(3))
+                guard !Task.isCancelled else { break }
+                await loadDevices()
+            }
+        }
+    }
+
+    private func stopAutoRefresh() {
+        refreshTask?.cancel()
+        refreshTask = nil
     }
 
     // MARK: - Preferences & Favorites

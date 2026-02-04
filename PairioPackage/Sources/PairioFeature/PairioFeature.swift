@@ -14,6 +14,7 @@ public typealias LaunchService = LaunchAtLoginService
 public typealias ShortcutService = GlobalShortcutService
 public typealias Notifications = NotificationService
 public typealias Preferences = PreferencesService
+public typealias Paywall = PaywallService
 
 // MARK: - Public Models
 public typealias Favorite = DeviceFavorite
