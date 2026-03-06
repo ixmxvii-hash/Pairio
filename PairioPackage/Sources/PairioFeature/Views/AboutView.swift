@@ -57,7 +57,7 @@ public struct AboutView: View {
             Spacer()
 
             // Copyright
-            Text("Copyright 2025 Logan Allen. All rights reserved.")
+            Text("Copyright 2026 Logan Allen. All rights reserved.")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }

@@ -98,8 +98,9 @@ struct ConnectionPopupContent: View {
 }
 
 /// Manager for showing connection popups under the notch
+@Observable
 @MainActor
-public final class ConnectionPopupManager: ObservableObject {
+public final class ConnectionPopupManager {
     public static let shared = ConnectionPopupManager()
 
     private var popupWindow: NSWindow?

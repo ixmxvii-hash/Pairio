@@ -12,7 +12,6 @@ public struct MenuBarView: View {
     @State private var audioService = AudioDeviceService()
     @State private var preferencesService = PreferencesService()
     @State private var shortcutService = GlobalShortcutService()
-    @State private var paywallService = PaywallService.shared
     @State private var availableDevices: [AudioDevice] = []
     @State private var selectedDeviceIDs: Set<AudioDeviceID> = []
     @State private var deviceVolumes: [AudioDeviceID: Float] = [:]
@@ -23,8 +22,6 @@ public struct MenuBarView: View {
     // Favorites UI state
     @State private var showSaveFavoriteSheet = false
     @State private var newFavoriteName = ""
-    @State private var showPaywallSheet = false
-
     // Auto-refresh state
     @State private var refreshTask: Task<Void, Never>?
 
@@ -77,9 +74,6 @@ public struct MenuBarView: View {
         }
         .sheet(isPresented: $showSaveFavoriteSheet) {
             saveFavoriteSheet
-        }
-        .sheet(isPresented: $showPaywallSheet) {
-            PaywallView(onDismiss: { showPaywallSheet = false })
         }
     }
 
@@ -472,11 +466,6 @@ public struct MenuBarView: View {
     private func startSharing() {
         errorMessage = nil
 
-        guard paywallService.isAccessAllowed else {
-            showPaywallSheet = true
-            return
-        }
-
         guard selectedDevices.count >= 2 else {
             errorMessage = "Select at least 2 devices to share audio"
             return
@@ -598,186 +587,6 @@ public struct MenuBarView: View {
         // A favorite is available if at least 2 of its devices are currently available
         let matchCount = favoriteUIDs.intersection(availableUIDs).count
         return matchCount >= 2
-    }
-}
-
-// MARK: - Favorite Row
-
-private struct FavoriteRow: View {
-    let favorite: DeviceFavorite
-    let isAvailable: Bool
-    let onSelect: () -> Void
-    let onDelete: () -> Void
-
-    @State private var showDeleteConfirmation = false
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "star.fill")
-                .font(.body)
-                .foregroundStyle(isAvailable ? .yellow : .secondary)
-                .frame(width: 24)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(favorite.name)
-                    .font(.body)
-                    .foregroundStyle(isAvailable ? .primary : .secondary)
-                    .lineLimit(1)
-
-                Text("\(favorite.deviceUIDs.count) devices")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            if isAvailable {
-                Button("Load") {
-                    onSelect()
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-            } else {
-                Text("Unavailable")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Button {
-                showDeleteConfirmation = true
-            } label: {
-                Image(systemName: "trash")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-            .confirmationDialog(
-                "Delete Favorite?",
-                isPresented: $showDeleteConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Delete", role: .destructive) {
-                    onDelete()
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Are you sure you want to delete \"\(favorite.name)\"?")
-            }
-        }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color.yellow.opacity(isAvailable ? 0.1 : 0.05))
-        )
-    }
-}
-
-// MARK: - Device Row with Volume Control
-
-private struct DeviceRowWithVolume: View {
-    let device: AudioDevice
-    let isSelected: Bool
-    let isSharingActive: Bool
-    @Binding var volume: Float
-    let canControlVolume: Bool
-    let onToggle: () -> Void
-
-    @State private var isExpanded = false
-
-    var body: some View {
-        VStack(spacing: 0) {
-            // Main row
-            HStack(spacing: 12) {
-                Image(systemName: DeviceUtils.deviceIcon(for: device.name))
-                    .font(.title3)
-                    .foregroundStyle(device.isAirPods ? .blue : .secondary)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(device.name)
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-
-                    if device.isConnected {
-                        HStack(spacing: 4) {
-                            Text("Connected")
-                                .font(.caption2)
-                                .foregroundStyle(.green)
-
-                            if isSharingActive && isSelected {
-                                Text("• Sharing")
-                                    .font(.caption2)
-                                    .foregroundStyle(.blue)
-                            }
-                        }
-                    }
-                }
-
-                Spacer()
-
-                // Volume expand button - always active for selected devices
-                if canControlVolume && isSelected {
-                    Button {
-                        withAnimation(.spring(response: 0.3)) {
-                            isExpanded.toggle()
-                        }
-                    } label: {
-                        Image(systemName: isExpanded ? "speaker.wave.2.fill" : "speaker.wave.2")
-                            .font(.body)
-                            .foregroundStyle(isExpanded ? Color.accentColor : Color.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                // Selection toggle - disabled during sharing
-                Button(action: onToggle) {
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                        .font(.title3)
-                        .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-                }
-                .buttonStyle(.plain)
-                .disabled(isSharingActive)
-                .opacity(isSharingActive ? 0.5 : 1.0)
-            }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 12)
-            .contentShape(Rectangle())
-
-            // Volume slider (expanded)
-            if isExpanded && isSelected && canControlVolume {
-                VStack(spacing: 8) {
-                    Divider()
-                        .padding(.horizontal, 12)
-
-                    HStack(spacing: 12) {
-                        Image(systemName: "speaker.fill")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-
-                        Slider(value: $volume, in: 0...1)
-                            .tint(.accentColor)
-
-                        Image(systemName: "speaker.wave.3.fill")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-
-                        Text("\(Int(volume * 100))%")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 36, alignment: .trailing)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 10)
-                }
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-        }
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(isSelected ? Color.accentColor.opacity(0.1) : Color.clear)
-        )
     }
 }
 

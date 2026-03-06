@@ -11,8 +11,6 @@ public enum AudioDeviceError: Error, LocalizedError, Sendable {
     case aggregateCreationFailed
     case propertyQueryFailed(OSStatus)
     case invalidDevice
-    case paywallRequired
-
     public var errorDescription: String? {
         switch self {
         case .deviceNotFound:
@@ -23,8 +21,6 @@ public enum AudioDeviceError: Error, LocalizedError, Sendable {
             return "Property query failed with status: \(status)"
         case .invalidDevice:
             return "Invalid audio device"
-        case .paywallRequired:
-            return "Your 3-day trial has ended. Upgrade to continue sharing."
         }
     }
 }
@@ -199,10 +195,6 @@ public final class AudioDeviceService {
 
     /// Start sharing audio to multiple devices
     public func startSharing(with devices: [AudioDevice], isManual: Bool = true) throws -> AggregateDevice {
-        guard PaywallService.shared.isAccessAllowed else {
-            throw AudioDeviceError.paywallRequired
-        }
-
         guard devices.count >= 2 else {
             throw AudioDeviceError.invalidDevice
         }

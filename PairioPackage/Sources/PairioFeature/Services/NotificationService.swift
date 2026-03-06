@@ -124,12 +124,7 @@ public final class NotificationService: Sendable {
             trigger: nil // Deliver immediately
         )
 
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                // Log error but don't crash - notifications are non-critical
-                print("Pairio: Failed to send notification: \(error.localizedDescription)")
-            }
-        }
+        UNUserNotificationCenter.current().add(request)
     }
 
     /// Remove all pending notifications
